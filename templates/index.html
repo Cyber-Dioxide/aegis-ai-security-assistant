@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Aegis · Hiderox</title>
+  <link rel="icon" href="/favicon.ico" type="image/svg+xml">
+  <script>
+    try { if (localStorage.getItem('hx.theme') === 'light') document.documentElement.classList.add('light'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script>tailwind.config = { corePlugins: { preflight: false } };</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/app.css?v={{ asset_v }}">
+  <script type="importmap">
+    { "imports": { {% for m in js_modules %}"/static/js/{{ m }}": "/static/js/{{ m }}?v={{ asset_v }}"{{ "," if not loop.last }}{% endfor %} } }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+  <div class="bg-blobs"><span></span><span></span><span></span></div>
+  <div class="cyber-grid"></div>
+
+  <div class="app-shell">
+    <!-- ================= Sidebar ================= -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo" id="brand-logo"><img src="/static/img/logo.svg" alt="" style="width:24px;height:24px"></div>
+        <div class="min-w-0">
+          <div class="font-display font-bold text-[17px] leading-tight" id="agent-name">Aegis</div>
+          <div class="text-[12px] muted truncate" id="org-name">by Hiderox Technologies</div>
+        </div>
+        <button class="btn btn-ghost btn-icon ml-auto mobile-only" data-close-sidebar aria-label="Close menu"><i data-lucide="x"></i></button>
+      </div>
+
+      <button class="btn btn-primary w-full mb-2" id="btn-new-chat"><i data-lucide="shield-plus"></i> New chat</button>
+
+      <nav class="flex flex-col gap-1">
+        <button class="nav-btn active" data-view="chat"><i data-lucide="message-circle"></i> Chat</button>
+        <button class="nav-btn" data-view="documents"><i data-lucide="file-lock-2"></i> Documents <span class="ml-auto text-[11px] faint" id="nav-doc-count"></span></button>
+        <button class="nav-btn" data-view="toolkit"><i data-lucide="wrench"></i> Toolkit</button>
+        <button class="nav-btn" data-view="settings"><i data-lucide="settings-2"></i> Settings</button>
+      </nav>
+
+      <div class="section-label">Recent chats</div>
+      <div class="convo-list" id="convo-list"></div>
+
+      <div class="flex flex-col gap-2 pt-2">
+        <button class="model-chip" id="model-chip" title="AI brain — click to change">
+          <span class="status-dot" id="model-dot"></span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-[12px] font-semibold truncate" id="model-provider">Connecting…</span>
+            <span class="block text-[11px] muted truncate mono" id="model-name"></span>
+          </span>
+          <i data-lucide="chevrons-up-down" class="w-4 h-4 muted"></i>
+        </button>
+        <div class="flex items-center gap-2">
+          <span class="local-badge" id="privacy-badge" title="Privacy status"></span>
+          {% if auth_enabled %}
+          <form method="post" action="/logout" class="ml-auto"><button class="btn btn-ghost btn-icon" title="Sign out"><i data-lucide="log-out"></i></button></form>
+          {% endif %}
+          <button class="btn btn-ghost btn-icon {{ '' if auth_enabled else 'ml-auto' }}" id="btn-theme" title="Toggle theme"><i data-lucide="sun-moon"></i></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= Main ================= -->
+    <main>
+      <!-- ---------- Chat ---------- -->
+      <section class="view active" id="view-chat">
+        <div class="chat-wrap">
+          <div class="chat-col">
+            <header class="topbar">
+              <button class="btn btn-ghost btn-icon mobile-only" data-open-sidebar aria-label="Menu"><i data-lucide="menu"></i></button>
+              <h2 class="font-display truncate" id="chat-title">New chat</h2>
+              <div class="ml-auto flex items-center gap-2">
+                <button class="btn btn-sm" id="btn-toggle-studio" title="Document Studio">
+                  <i data-lucide="file-pen-line"></i><span class="hide-sm">Document Studio</span>
+                  <span class="badge badge-ok" id="studio-badge" hidden>1</span>
+                </button>
+              </div>
+            </header>
+
+            <div class="messages" id="messages"><div class="messages-inner" id="messages-inner"></div></div>
+
+            <div class="composer-wrap">
+              <div class="composer">
+                <textarea id="composer-input" rows="1" placeholder="Ask about security, privacy, or anything…"></textarea>
+                <div class="composer-row">
+                  <button class="chip" data-insert="Create a PDF: [document type] for [organisation / audience]. Include [key points]."><i data-lucide="file-plus-2"></i>Make a PDF</button>
+                  <button class="chip hide-sm" data-insert="Is this phishing? Here's the message:&#10;&#10;[paste the email, SMS or link]"><i data-lucide="fish"></i>Check phishing</button>
+                  <span class="text-[11px] faint hide-sm ml-1"><span class="kbd">Enter</span> send · <span class="kbd">Shift+Enter</span> new line</span>
+                  <button class="send-btn" id="btn-send" disabled aria-label="Send"><i data-lucide="arrow-up"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Document Studio -->
+          <div class="studio-backdrop" id="studio-backdrop"></div>
+          <aside class="studio" id="studio" style="width:min(520px,100vw)">
+            <div class="studio-head">
+              <i data-lucide="file-pen-line" class="w-5 h-5" style="color:#6ee7b7"></i>
+              <div class="min-w-0">
+                <div class="font-display font-semibold">Document Studio</div>
+                <div class="text-[11px] muted truncate"><span id="studio-title">no document</span> <span id="studio-dirty" class="dirty-pill ml-1" hidden>unsaved</span></div>
+              </div>
+              <button class="btn btn-ghost btn-icon ml-auto" id="btn-close-studio" aria-label="Close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="studio-body" id="studio-body"></div>
+            <div class="studio-foot" id="studio-foot"></div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ---------- Documents ---------- -->
+      <section class="view page" id="view-documents">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon mobile-only" data-open-sidebar><i data-lucide="menu"></i></button>
+          <h2 class="font-display">Documents</h2>
+          <div class="ml-auto flex gap-2 items-center">
+            <input class="input hide-sm" style="width:220px;padding:6px 10px" id="docs-search" placeholder="Filter…" />
+            <button class="btn btn-sm btn-primary" id="btn-blank-doc"><i data-lucide="file-plus-2"></i><span class="hide-sm">Blank document</span></button>
+          </div>
+        </header>
+        <div class="page-body"><div class="page-inner">
+          <div>
+            <div class="section-label" style="padding-left:0">Start from a template — Aegis writes it for you</div>
+            <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-3" id="templates-grid"></div>
+          </div>
+          <div>
+            <div class="section-label" style="padding-left:0">Your documents</div>
+            <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-3" id="docs-grid"></div>
+          </div>
+        </div></div>
+      </section>
+
+      <!-- ---------- Toolkit ---------- -->
+      <section class="view page" id="view-toolkit">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon mobile-only" data-open-sidebar><i data-lucide="menu"></i></button>
+          <h2 class="font-display">Toolkit</h2>
+          <span class="local-badge ml-2"><i data-lucide="lock"></i>runs 100% in your browser — nothing is sent anywhere</span>
+        </header>
+        <div class="page-body"><div class="page-inner"><div class="tool-grid" id="toolkit"></div></div></div>
+      </section>
+
+      <!-- ---------- Settings ---------- -->
+      <section class="view page" id="view-settings">
+        <header class="topbar">
+          <button class="btn btn-ghost btn-icon mobile-only" data-open-sidebar><i data-lucide="menu"></i></button>
+          <h2 class="font-display">Settings</h2>
+          <span class="ml-auto text-[11px] faint mono">v{{ app_version }}</span>
+        </header>
+        <div class="page-body"><div class="page-inner" style="max-width: 920px">
+          <div class="tabs" id="settings-tabs">
+            <button class="tab active" data-tab="ai">AI Brain</button>
+            <button class="tab" data-tab="privacy">Privacy</button>
+            <button class="tab" data-tab="persona">Persona</button>
+            <button class="tab" data-tab="branding">Branding</button>
+          </div>
+          <div id="settings-panel"></div>
+        </div></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal-root"></div>
+  <div class="toasts" id="toasts"></div>
+
+  <script type="module" src="/static/js/app.js?v={{ asset_v }}"></script>
+</body>
+</html>

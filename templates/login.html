@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in · {{ agent.name or 'Aegis' }}</title>
+  <link rel="icon" href="/favicon.ico" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>body { overflow: auto; }</style>
+</head>
+<body>
+  <div class="bg-blobs"><span></span><span></span><span></span></div>
+  <div class="cyber-grid"></div>
+  <div class="login-wrap">
+    <form class="card login-card" method="post">
+      <img src="/static/img/logo.svg" alt="" style="width:56px;height:56px;display:block;margin-bottom:16px">
+      <h1 class="font-display" style="margin:0 0 4px;font-size:26px">{{ agent.name or 'Aegis' }}</h1>
+      <p class="muted" style="margin:0 0 22px">{{ brand.organization }} · private instance</p>
+      <label class="label" for="token">Access token</label>
+      <input class="input mono" id="token" name="token" type="password" autocomplete="current-password" autofocus required>
+      {% if error %}<div class="error-box">{{ error }}</div>{% endif %}
+      <button class="btn btn-primary" style="width:100%;margin-top:16px;padding:11px" type="submit">Unlock</button>
+      <p class="faint" style="font-size:12px;margin:16px 0 0">The token is set by whoever deployed this server (<span class="mono">AEGIS_ACCESS_TOKEN</span>).</p>
+    </form>
+  </div>
+</body>
+</html>
